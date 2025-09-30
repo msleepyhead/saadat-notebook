@@ -18,13 +18,13 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Download the APK that you attached to the release
-      - name: Download release asset (app.apk)
+      - name: Download release asset (app-release.apk)
         uses: dsaltares/fetch-release-asset@1.1.0
         with:
           repo: ${{ github.repository }}
           version: tags/${{ github.ref_name }}
-          file: app.apk
-          target: "downloads/app.apk" # Save it directly to the correct folder
+          file: app-release.apk
+          target: "downloads/app-release.apk" # Save it directly to the correct folder
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 3: Get file size, version, and date, then update apk-info.json
@@ -36,7 +36,7 @@ jobs:
             const path = './apk-info.json';
             
             // Get file stats to find the size
-            const stats = fs.statSync('./downloads/app.apk');
+            const stats = fs.statSync('./downloads/app-release.apk');
             const fileSizeInBytes = stats.size;
             const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(1);
             
@@ -59,7 +59,7 @@ jobs:
             
             console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
 
-      # Step 4: Commit the updated apk-info.json and the new app.apk back to the repo
+      # Step 4: Commit the updated apk-info.json and the new app-release.apk back to the repo
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
