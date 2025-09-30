@@ -17,52 +17,45 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Download the APK that you attached to the release
+      # Step 2: Download the APK from the release using the CORRECT, WORKING action
       - name: Download release asset (app-release.apk)
-        uses: cardinalby/download-release-asset-action@v1
+        uses: cardinalby/download-release-asset-action@v1 # <-- THIS IS THE CORRECT ACTION
         with:
           repo: ${{ github.repository }}
           version: ${{ github.ref_name }}
-          file: app-release.apk                   # UPDATE 1: Looks for the new filename
-          output: "downloads/app-release.apk"       # UPDATE 2: Saves the file with the new name
+          file: app-release.apk
+          output: "downloads/app-release.apk"
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3: Update apk-info.json with correct details
+      # Step 3: Update apk-info.json with the new details
       - name: Update apk-info.json
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const path = './apk-info.json';
-            const apkPath = './downloads/app-release.apk'; // UPDATE 3: Path to the new file for size measurement
+            const apkPath = './downloads/app-release.apk';
             
-            // Get file stats to find the size
             const stats = fs.statSync(apkPath);
             const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(1);
             
-            // Get version from the release tag (e.g., v2.5.1 -> 2.5.1)
             const version = "${{ github.ref_name }}".replace('v', '');
-            
-            // Get today's date
             const today = new Date().toISOString().slice(0, 10);
             
-            // Read the existing JSON file
             const info = JSON.parse(fs.readFileSync(path, 'utf8'));
             
-            // Update the values
             info.version = version;
             info.update_date = today;
             info.size = `${fileSizeInMB} MB`;
-            info.apk_url = `./downloads/app-release.apk`; // UPDATE 4: Writes the correct URL into the JSON
+            info.apk_url = `./downloads/app-release.apk`;
             
-            // Write the new content back to the file
             fs.writeFileSync(path, JSON.stringify(info, null, 2));
             
             console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
 
-      # Step 4: Commit the updated files back to the repository
+      # Step 4: Commit the updated files back to your repository
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: Auto-update APK to version ${{ github.ref_name }}"
-          file_pattern: "downloads/app-release.apk apk-info.json" # UPDATE 5: Commits the new file name
+          file_pattern: "downloads/app-release.apk apk-info.json"
