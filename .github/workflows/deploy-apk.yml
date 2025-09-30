@@ -13,28 +13,29 @@ jobs:
       contents: write
 
     steps:
-      # Step 1: Check out your repository's code
-      - name: Checkout repository
+      # Step 1: Check out the 'main' branch specifically
+      - name: Checkout main branch
         uses: actions/checkout@v4
+        with:
+          ref: main # <-- THIS IS THE CRUCIAL FIX
 
-      # Step 2: Download the APK that you attached to the release
-      # THIS ACTION WORKS CORRECTLY when you give it the filename and version.
+      # Step 2: Download the APK from the release
       - name: Download release asset (app-release.apk)
         uses: robinraju/release-downloader@v1.9
         with:
           repository: ${{ github.repository }}
           tag: ${{ github.ref_name }}
           fileName: "app-release.apk"
-          target: "downloads/" # Downloads the file INTO this directory
+          target: "downloads/"
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 3 (NEW & SIMPLIFIED): Set up Node.js environment
+      # Step 3: Set up Node.js environment
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Use a modern version of Node.js
+          node-version: '20'
 
-      # Step 4 (NEW & SIMPLIFIED): Run a Node.js script to update the JSON
+      # Step 4: Run a Node.js script to update the JSON
       - name: Update apk-info.json using Node.js
         run: |
           const fs = require('fs');
@@ -59,7 +60,7 @@ jobs:
           console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
         shell: node {0}
 
-      # Step 5: Commit the updated files back to your repository
+      # Step 5: Commit the updated files back to the 'main' branch
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
