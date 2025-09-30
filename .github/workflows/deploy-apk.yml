@@ -17,14 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Download the APK that you attached to the release
+      # Step 2: Download the APK that you attached to the release (USING THE NEW ACTION)
       - name: Download release asset (app-release.apk)
-        uses: dsaltares/fetch-release-asset@1.1.0
+        uses: cardinalby/download-release-asset-action@v1 # <-- THIS IS THE REPLACEMENT ACTION
         with:
           repo: ${{ github.repository }}
-          version: tags/${{ github.ref_name }}
+          version: ${{ github.ref_name }}
           file: app-release.apk
-          target: "downloads/app-release.apk" # Save it directly to the correct folder
+          output: "downloads/app-release.apk" # The new action uses 'output' instead of 'target'
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 3: Get file size, version, and date, then update apk-info.json
@@ -35,26 +35,20 @@ jobs:
             const fs = require('fs');
             const path = './apk-info.json';
             
-            // Get file stats to find the size
             const stats = fs.statSync('./downloads/app-release.apk');
             const fileSizeInBytes = stats.size;
             const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(1);
             
-            // Get version from the release tag (e.g., v2.5.1 -> 2.5.1)
             const version = "${{ github.ref_name }}".replace('v', '');
             
-            // Get today's date
             const today = new Date().toISOString().slice(0, 10);
             
-            // Read the existing JSON file
             const info = JSON.parse(fs.readFileSync(path, 'utf8'));
             
-            // Update the values
             info.version = version;
             info.update_date = today;
             info.size = `${fileSizeInMB} MB`;
             
-            // Write the new content back to the file
             fs.writeFileSync(path, JSON.stringify(info, null, 2));
             
             console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
