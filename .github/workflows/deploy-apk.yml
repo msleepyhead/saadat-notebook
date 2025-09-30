@@ -19,7 +19,7 @@ jobs:
 
       # Step 2: Download the APK from the release using the CORRECT, WORKING action
       - name: Download release asset (app-release.apk)
-        uses: cardinalby/download-release-asset-action@v1 # <-- THIS IS THE CORRECT ACTION
+        uses: cardinalby/download-release-asset-action@v1 # <-- This is the working action
         with:
           repo: ${{ github.repository }}
           version: ${{ github.ref_name }}
