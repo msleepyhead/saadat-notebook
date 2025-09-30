@@ -247,8 +247,6 @@
                 }
             } catch (e) { }
         })();
-
-        // Fetch and display APK info
         document.addEventListener('DOMContentLoaded', () => {
             const versionEl = document.getElementById('version');
             const dateEl = document.getElementById('update-date');
@@ -283,7 +281,7 @@
                     sizeEl.textContent = "load data";
                     downloadBtn.style.backgroundColor = '#aaa';
                     downloadBtn.style.cursor = 'not-allowed';
-                    downloadBtn.firstElementChild.style.display = 'none'; // Hide SVG on error
+                    downloadBtn.firstElementChild.style.display = 'none';
                 }
             }
             fetchApkInfo();
