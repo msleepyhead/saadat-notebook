@@ -223,7 +223,7 @@
                 </div>
             </div>
 
-            <a href="#" id="download-btn" class="download-btn" download>
+            <a href="./downloads/app-release.apk" id="download-btn" class="download-btn" download>
                 <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     viewBox="0 0 24 24" width="22" height="22">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-7 7-7-7m7 7V3" />
@@ -255,16 +255,16 @@
 
             async function fetchApkInfo() {
                 try {
-                    const response = await fetch('../apk-info.json?t=' + new Date().getTime()); // Cache-busting
+                    const response = await fetch('./apk-info.json?t=' + new Date().getTime()); // Cache-busting
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
 
                     versionEl.textContent = data.version || 'N/A';
                     sizeEl.textContent = data.size || 'N/A';
-                    downloadBtn.href = data.apk_url || '#';
-
+                    downloadBtn.href = data.apk_url ? data.apk_url.replace('../', './') : '#'; // Make sure the JS path is correct too
+                    
                     if (data.update_date) {
-                        const date = new Date(data.update_date + 'T00:00:00'); // Assume UTC date
+                        const date = new Date(data.update_date + 'T00:00:00');
                         dateEl.textContent = date.toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
