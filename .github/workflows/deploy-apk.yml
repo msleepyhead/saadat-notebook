@@ -64,4 +64,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: Auto-update APK to version ${{ github.ref_name }}"
-          file_pattern: "downloads/app.apk apk-info.json"
+          file_pattern: "downloads/app-release.apk apk-info.json"
