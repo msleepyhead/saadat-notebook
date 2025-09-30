@@ -1,0 +1,67 @@
+# Name of the GitHub Action
+name: Deploy New APK and Update JSON
+
+# This action runs automatically whenever a new release is 'published'
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Use a standard virtual machine
+    permissions:
+      contents: write # Give the job permission to write back to your repository
+
+    steps:
+      # Step 1: Check out your repository's code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Download the APK that you attached to the release
+      - name: Download release asset (app.apk)
+        uses: dsaltares/fetch-release-asset@1.1.0
+        with:
+          repo: ${{ github.repository }}
+          version: tags/${{ github.ref_name }}
+          file: app.apk
+          target: "downloads/app.apk" # Save it directly to the correct folder
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Get file size, version, and date, then update apk-info.json
+      - name: Update apk-info.json
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = './apk-info.json';
+            
+            // Get file stats to find the size
+            const stats = fs.statSync('./downloads/app.apk');
+            const fileSizeInBytes = stats.size;
+            const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(1);
+            
+            // Get version from the release tag (e.g., v2.5.1 -> 2.5.1)
+            const version = "${{ github.ref_name }}".replace('v', '');
+            
+            // Get today's date
+            const today = new Date().toISOString().slice(0, 10);
+            
+            // Read the existing JSON file
+            const info = JSON.parse(fs.readFileSync(path, 'utf8'));
+            
+            // Update the values
+            info.version = version;
+            info.update_date = today;
+            info.size = `${fileSizeInMB} MB`;
+            
+            // Write the new content back to the file
+            fs.writeFileSync(path, JSON.stringify(info, null, 2));
+            
+            console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
+
+      # Step 4: Commit the updated apk-info.json and the new app.apk back to the repo
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: Auto-update APK to version ${{ github.ref_name }}"
+          file_pattern: "downloads/app.apk apk-info.json"
