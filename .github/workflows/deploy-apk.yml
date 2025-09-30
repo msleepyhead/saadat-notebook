@@ -11,23 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # Give the job permission to write back to your repository
+      # NEW: We need permission to read release assets now
+      packages: read
 
     steps:
       # Step 1: Check out your repository's code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Download the APK from the release using the CORRECT, WORKING action
-      - name: Download release asset (app-release.apk)
-        uses: cardinalby/download-release-asset-action@v1 # <-- This is the working action
+      # Step 2 (NEW): Find the ID of the attached APK asset
+      - name: Get asset ID for app-release.apk
+        id: get_asset_id # Give this step an ID so we can reference its output
+        uses: cardinalby/js-eval-action@v1
         with:
-          repo: ${{ github.repository }}
-          version: ${{ github.ref_name }}
-          file: app-release.apk
-          output: "downloads/app-release.apk"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          expression: |
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: context.ref.replace('refs/tags/', ''),
+            });
+            const asset = release.data.assets.find(a => a.name === 'app-release.apk');
+            if (!asset) {
+              throw new Error('Could not find app-release.apk in the release assets.');
+            }
+            return asset.id;
 
-      # Step 3: Update apk-info.json with the new details
+      # Step 3: Download the APK using the assetId we just found
+      - name: Download release asset (app-release.apk)
+        uses: cardinalby/download-release-asset-action@v1
+        with:
+          assetId: ${{ steps.get_asset_id.outputs.result }} # Use the output from the previous step
+          targetPath: "downloads/app-release.apk" # Use the correct input name 'targetPath'
+          
+      # Step 4: Update apk-info.json with the new details
       - name: Update apk-info.json
         uses: actions/github-script@v7
         with:
@@ -53,7 +69,7 @@ jobs:
             
             console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
 
-      # Step 4: Commit the updated files back to your repository
+      # Step 5: Commit the updated files back to your repository
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
