@@ -11,73 +11,53 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      # This permission is still required for the script to read release details
-      packages: read
 
     steps:
       # Step 1: Check out your repository's code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2 (CORRECTED): Find the ID of the attached APK asset using github-script
-      - name: Get asset ID for app-release.apk
-        id: get_asset_id
-        uses: actions/github-script@v7 # <-- Using the official, more powerful action
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }} # Pass the token explicitly
-          script: |
-            const { owner, repo } = context.repo;
-            const tag = context.ref.replace('refs/tags/', '');
-            
-            try {
-              const release = await github.rest.repos.getReleaseByTag({ owner, repo, tag });
-              const asset = release.data.assets.find(a => a.name === 'app-release.apk');
-              
-              if (!asset) {
-                core.setFailed('Could not find app-release.apk in the release assets.');
-                return;
-              }
-              
-              console.log(`Found asset ID: ${asset.id}`);
-              return asset.id; // The return value of the script becomes the output
-              
-            } catch (error) {
-              core.setFailed(`Failed to get release by tag: ${error.message}`);
-              return;
-            }
-          
-      # Step 3: Download the APK using the assetId we just found
+      # Step 2: Download the APK that you attached to the release
+      # THIS ACTION WORKS CORRECTLY when you give it the filename and version.
       - name: Download release asset (app-release.apk)
-        uses: cardinalby/download-release-asset-action@v1
+        uses: robinraju/release-downloader@v1.9
         with:
-          assetId: ${{ steps.get_asset_id.outputs.result }}
-          targetPath: "downloads/app-release.apk"
+          repository: ${{ github.repository }}
+          tag: ${{ github.ref_name }}
+          fileName: "app-release.apk"
+          target: "downloads/" # Downloads the file INTO this directory
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3 (NEW & SIMPLIFIED): Set up Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Use a modern version of Node.js
+
+      # Step 4 (NEW & SIMPLIFIED): Run a Node.js script to update the JSON
+      - name: Update apk-info.json using Node.js
+        run: |
+          const fs = require('fs');
+          const path = './apk-info.json';
+          const apkPath = './downloads/app-release.apk';
           
-      # Step 4: Update apk-info.json with the new details
-      - name: Update apk-info.json
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = './apk-info.json';
-            const apkPath = './downloads/app-release.apk';
-            
-            const stats = fs.statSync(apkPath);
-            const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(1);
-            
-            const version = "${{ github.ref_name }}".replace('v', '');
-            const today = new Date().toISOString().slice(0, 10);
-            
-            const info = JSON.parse(fs.readFileSync(path, 'utf8'));
-            
-            info.version = version;
-            info.update_date = today;
-            info.size = `${fileSizeInMB} MB`;
-            info.apk_url = `./downloads/app-release.apk`;
-            
-            fs.writeFileSync(path, JSON.stringify(info, null, 2));
-            
-            console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
+          const stats = fs.statSync(apkPath);
+          const fileSizeInMB = (stats.size / (1024 * 1024)).toFixed(1);
+          
+          const version = "${{ github.ref_name }}".replace('v', '');
+          const today = new Date().toISOString().slice(0, 10);
+          
+          const info = JSON.parse(fs.readFileSync(path, 'utf8'));
+          
+          info.version = version;
+          info.update_date = today;
+          info.size = `${fileSizeInMB} MB`;
+          info.apk_url = `./downloads/app-release.apk`;
+          
+          fs.writeFileSync(path, JSON.stringify(info, null, 2));
+          
+          console.log(`Updated ${path} to version ${version}, size ${fileSizeInMB} MB`);
+        shell: node {0}
 
       # Step 5: Commit the updated files back to your repository
       - name: Commit and push changes
