@@ -45,7 +45,6 @@
             color: var(--text-primary);
             display: flex;
             flex-direction: column;
-            /* To accommodate footer */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
@@ -55,7 +54,6 @@
 
         main {
             flex-grow: 1;
-            /* Pushes footer down */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -190,13 +188,11 @@
 </head>
 
 <body>
-
     <main>
         <div class="card">
             <img src="./assets/app-icon.png" alt="App Icon" class="app-icon">
             <h1>Saadat Notebook</h1>
             <p class="app-tagline">Download the Official Android App</p>
-
             <div class="info-grid">
                 <div class="info-item">
                     <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -222,8 +218,8 @@
                     <span>Size: <b id="file-size">...</b></span>
                 </div>
             </div>
-
-            <a href="./downloads/app-release.apk" id="download-btn" class="download-btn" download>
+            <!-- The href here is a fallback; the JS will overwrite it -->
+            <a href="#" id="download-btn" class="download-btn" download>
                 <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     viewBox="0 0 24 24" width="22" height="22">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-7 7-7-7m7 7V3" />
@@ -232,21 +228,15 @@
             </a>
         </div>
     </main>
-
     <footer>
         <p>&copy; 2024 <a href="https://saadatnotebook.rf.gd" target="_blank">Saadat Notebook</a>. All rights reserved.
         </p>
     </footer>
-
     <script>
         (function () {
-            try {
-                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (systemPrefersDark) {
-                    document.documentElement.classList.add('dark-mode');
-                }
-            } catch (e) { }
+            try { const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches; if (systemPrefersDark) { document.documentElement.classList.add('dark-mode'); } } catch (e) { }
         })();
+
         document.addEventListener('DOMContentLoaded', () => {
             const versionEl = document.getElementById('version');
             const dateEl = document.getElementById('update-date');
@@ -255,25 +245,20 @@
 
             async function fetchApkInfo() {
                 try {
-                    const response = await fetch('./apk-info.json?t=' + new Date().getTime()); // Cache-busting
+                    const response = await fetch('./apk-info.json?t=' + new Date().getTime());
                     if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
                     const data = await response.json();
 
                     versionEl.textContent = data.version || 'N/A';
                     sizeEl.textContent = data.size || 'N/A';
+
+                    // This sets the download button's link from the JSON file
                     downloadBtn.href = data.apk_url || '#';
-                    
+
                     if (data.update_date) {
                         const date = new Date(data.update_date + 'T00:00:00');
-                        dateEl.textContent = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-                    } else {
-                        dateEl.textContent = 'N/A';
-                    }
-
+                        dateEl.textContent = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    } else { dateEl.textContent = 'N/A'; }
                 } catch (error) {
                     console.error("Failed to load APK info:", error);
                     versionEl.textContent = "Error";
@@ -281,13 +266,12 @@
                     sizeEl.textContent = "load data";
                     downloadBtn.style.backgroundColor = '#aaa';
                     downloadBtn.style.cursor = 'not-allowed';
-                    downloadBtn.firstElementChild.style.display = 'none';
+                    downloadBtn.querySelector('svg').style.display = 'none';
                 }
             }
             fetchApkInfo();
         });
     </script>
-
 </body>
 
 </html>
