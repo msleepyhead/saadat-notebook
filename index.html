@@ -261,7 +261,7 @@
 
                     versionEl.textContent = data.version || 'N/A';
                     sizeEl.textContent = data.size || 'N/A';
-                    downloadBtn.href = data.apk_url ? data.apk_url.replace('../', './') : '#'; // Make sure the JS path is correct too
+                    downloadBtn.href = data.apk_url || '#';
                     
                     if (data.update_date) {
                         const date = new Date(data.update_date + 'T00:00:00');
